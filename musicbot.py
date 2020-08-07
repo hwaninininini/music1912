@@ -271,6 +271,14 @@ class SongQueue(asyncio.Queue):
 	def shuffle(self):
 		random.shuffle(self._queue)
 
+	def select(self, index : int, loop : bool = False):
+		for i in range(index-1):
+			if not loop:
+				del self._queue[0]
+			else:
+				self._queue.append(self._queue[0])
+				del self._queue[0]
+
 	def remove(self, index: int):
 		del self._queue[index]
 
@@ -467,11 +475,15 @@ class Music(commands.Cog):
 			await ctx.message.add_reaction('⏹')
 
 	@commands.command(name=command[5][0], aliases=command[5][1:])
-	async def _skip(self, ctx: commands.Context):
+	async def _skip(self, ctx: commands.Context, *, args: int = 1):
 		if not ctx.voice_state.is_playing:
 			return await ctx.send(':mute: 현재 재생중인 음악이 없습니다.')
 
 		await ctx.message.add_reaction('⏭')
+
+		if args != 1:
+			ctx.voice_state.songs.select(args, ctx.voice_state.loop)
+
 		ctx.voice_state.skip()
 		'''	
 		voter = ctx.message.author
@@ -592,7 +604,7 @@ class Music(commands.Cog):
 		command_list += ','.join(command[2]) + ' [검색어] or [url]\n'     #!재생
 		command_list += ','.join(command[3]) + '\n'     #!일시정지
 		command_list += ','.join(command[4]) + '\n'     #!다시재생
-		command_list += ','.join(command[5]) + '\n'     #!스킵
+		command_list += ','.join(command[5]) + ' (숫자)\n'     #!스킵
 		command_list += ','.join(command[6]) + ' 혹은 [명령어] + [숫자]\n'     #!목록
 		command_list += ','.join(command[7]) + '\n'     #!현재재생
 		command_list += ','.join(command[8]) + ' [숫자 1~100]\n'     #!볼륨
